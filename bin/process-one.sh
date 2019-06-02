@@ -59,9 +59,15 @@ convert $in -crop $xpitch"x2000+"$x+$y $out
 #
 # get rid of the background by getting rid of close to white (paper), grey (shadows) and grey (pencil) and then cropping
 convert $out -fuzz 10% -transparent '#b8b8b8' -fuzz 10% -transparent '#707070' -fuzz 10% -transparent '#a0a0a0' -fuzz 10% -transparent '#d0d0d0' -fuzz 10% -transparent white -fuzz 10% $outdir/$base-$id-crop.png
-# finding the midpoint and using the magic wand to keep similar stuff and get rid of other background stuff
-xmid=$(( $xpitch / 2 ))
-ymid=1000
+# finding the midpoint and using the magic wand to keep similar stuff and get rid of other background stuff  (works for all but DSC08806-8 which needs - 64)
+if [[ $base = "DSC08806" && $id = "8" ]]; then
+    offset=64
+else
+    offset=54
+fi
+
+xmid=$(( ($xpitch / 2) - $offset ))
+ymid=$(( 1000 - $offset ))
 $DIR/magicwand.sh $xmid,$ymid -t 25 -c transparent $outdir/$base-$id-crop.png $outdir/$base-$id-wand.png
 # trimming, getting rid of transparent stuff
 convert $outdir/$base-$id-wand.png -trim $outdir/$base-$id-crop.png
