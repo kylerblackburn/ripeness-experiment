@@ -45,24 +45,27 @@ else
     xoff=420
 fi
     
+
+
+# position of this piece of fruit in the big photo (4 x 2 grid)
 y=$((2000 * $row))
 x=$(($xoff + ($col * $xpitch)))
 
-
-
-# 
-
-# echo $in $id $row $col $x $y $outdir $base
+# cropping this piece of fruit
 convert $in -crop $xpitch"x2000+"$x+$y $out
 
-#find the bounding box
-#convert $out -fuzz 15% -fill white -opaque '#b8b8b8' $outdir/$base-$id-nogray.png
-#convert $outdir/$base-$id-nogray.png +dither -colors 5 $outdir/$base-$id-dither.png
+#
+# find the bounding box that tightly crops this piece of fruit
+#
+# get rid of the background by getting rid of close to white (paper), grey (shadows) and grey (pencil) and then cropping
 convert $out -fuzz 10% -transparent '#b8b8b8' -fuzz 10% -transparent '#707070' -fuzz 10% -transparent '#a0a0a0' -fuzz 10% -transparent '#d0d0d0' -fuzz 10% -transparent white -fuzz 10% $outdir/$base-$id-crop.png
+# finding the midpoint and using the magic wand to keep similar stuff and get rid of other background stuff
 xmid=$(( $xpitch / 2 ))
 ymid=1000
 $DIR/magicwand.sh $xmid,$ymid -t 25 -c transparent $outdir/$base-$id-crop.png $outdir/$base-$id-wand.png
+# trimming, getting rid of transparent stuff
 convert $outdir/$base-$id-wand.png -trim $outdir/$base-$id-crop.png
+# calculating the bounds of the picture relative to the big picture
 width=`convert $outdir/$base-$id-crop.png -format "%w" info:`
 height=`convert $outdir/$base-$id-crop.png -format "%h" info:`
 ulx=`convert $outdir/$base-$id-crop.png -format "%X" info:`
@@ -71,17 +74,29 @@ ulxabs=`convert $outdir/$base-$id-crop.png -format "%[fx:$ulx+$x]" info:`
 ulyabs=`convert $outdir/$base-$id-crop.png -format "%[fx:$uly+$y]" info:`
 # echo "ulx=$ulx; uly=$uly; ulxabs=$ulxabs; ulyabs=$ulyabs;"
 cr=$width"x"$height"+"$ulxabs"+"$ulyabs
+
+
+#
+# having found the exact location of the piece of fruit, creating final images of it
+#
 # echo "cr=$cr"
+# starting again with the simple crop, getting rid of close to white (paper), grey (shadows) and grey (pencil)
 convert $out -crop $cr -fuzz 10% -transparent '#b8b8b8' -fuzz 10% -transparent '#707070' -fuzz 10% -transparent '#a0a0a0' -fuzz 10% -transparent '#d0d0d0' -fuzz 10% -transparent white -fuzz 10% $outdir/$base-$id-crop.png
+# again using the magic wand to select the piece of fruit
 xmid=$(( $width/3 )) #don't take middle because bend in bananas
 ymid=$(( $height/2 ))
 $DIR/magicwand.sh $xmid,$ymid -t 50 -c transparent $outdir/$base-$id-crop.png $outdir/$base-$id-wand.png
+# dithering to make the image a small number of representative colours
 convert $outdir/$base-$id-wand.png +dither -colors 4 $outdir/$base-$id-dither.png
+# creating a square image with the fruit in the middle
 convert $outdir/$base-$id-crop.png -gravity center -background transparent -extent 1250x1250 $outdir/$base-$id-sq.png
+# making a 1x1 version of the image, getting the average colour
 convert $outdir/$base-$id-wand.png -scale 1x1! -alpha off $outdir/$base-$id-1x1.png;
+# printing out average colour in rgb format
 echo -n "$base-$id "
 convert $outdir/$base-$id-1x1.png -format "%[pixel:u.p]" info:;
 echo;
+# turning the 1x1 average into a 100x100 of the same colour
 convert $outdir/$base-$id-1x1.png -scale 100x100! $outdir/$base-$id-100x100.png;
 
 exit
