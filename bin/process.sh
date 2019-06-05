@@ -15,17 +15,26 @@ function getOneSetOfColors() {
 
     # get the single pixel colour
     one="$RESULTS/$photo-$id-1x1.png"
-    oneout=($(convert $one -define histogram:unique-colors=true -format %c histogram:info:-|sed s/[\:\(\,\)]/\ /g))
+    oneoutrgb=($(convert $one -define histogram:unique-colors=true -format %c histogram:info:-|sed s/[\:\(\,\)]/\ /g))
+    oneouthsl=($(convert $one -colorspace HSL -define histogram:unique-colors=true -format %c histogram:info:-|sed s/[\:\(\,\)]/\ /g))
+
     # the dithered colours and pixel numbers
     two="$RESULTS/$photo-$id-dither.png"
-    twoout=($(convert $two -define histogram:unique-colors=true -format %c histogram:info:-|grep -v none|sed s/[\:\(\,\)]/\ /g))
+    twooutrgb=($(convert $two -define histogram:unique-colors=true -format %c histogram:info:-|grep -v '00000000'|sed s/[\:\(\,\)]/\ /g))
+    twoouthsl=($(convert $two -colorspace HSL -define histogram:unique-colors=true -format %c histogram:info:-|grep -v '00000000'|sed s/[\:\(\,\)]/\ /g))
 
     return="$photo, $id, "
     for i in 0 1 2 3; do
-	return="$return ${oneout[$i]}, "
+	return="$return ${oneoutrgb[$i]}, "
+    done
+    for i in 0 1 2 3; do
+	return="$return ${oneouthsl[$i]}, "
     done
     for i in 0 1 2 3 11 12 13 14 22 23 24 25; do
-	return="$return ${twoout[$i]}, "
+	return="$return ${twooutrgb[$i]}, "
+    done
+    for i in 0 1 2 3 11 12 13 14 22 23 24 25; do
+	return="$return ${twoouthsl[$i]}, "
     done
 
     echo $return
@@ -42,7 +51,7 @@ for base in  ${b[@]} ${t[@]}; do
 # for base in ${n[@]}; do
     for id in `seq 1 8`; do
 #    for id in 8; do
-	$DIR/process-one.sh originals/$base.JPG $id $RESULTS
+#	$DIR/process-one.sh originals/$base.JPG $id $RESULTS
 	csv=$(getOneSetOfColors $base $id)
 	echo $csv >> $csvfile
     done
